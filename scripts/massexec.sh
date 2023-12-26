@@ -1,29 +1,36 @@
 #!/bin/bash
-declare -a pids
-completed=0
-toDo=0
 
-while getopts ":path:m:number:" option
-do
-  case $option in
-    path) dirpath="$OPTARG";;
-    m) mask="$OPTARG";;
-    number) number="$OPTARG";;
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 [--path dirpath] [--mask mask] [--number number] command"
+  exit 1
+fi
+
+dirpath="."
+mask="*"
+number=$(nproc)
+command=""
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+  --path)
+    dirpath="$2"
+    shift
+    ;;
+  --mask)
+    mask="$2"
+    shift
+    ;;
+  --number)
+    number="$2"
+    shift
+    ;;
+  *)
+    command="$1"
+    shift
+    ;;
   esac
 done
-
-echo "Маска вот"
-echo $mask
-if [ -z ${mask} ];
-  echo "Маски нет"
-  then mask="*";
-fi
-if [ -z "$dirpath" ]; then dirpath="."; fi
-if [ -z "$number" ]; then
-  cpu_coint=$(nproc)
-  number=$cpu_coint
-fi
-echo $mask
 
 if ! [ -d "$dirpath" ]; then
     echo "$dirpath is not a directory."
@@ -31,44 +38,22 @@ if ! [ -d "$dirpath" ]; then
 fi
 
 COMMAND=${@:$OPTIND:1}
-
-echoCompleted(){
-  echo $completed
-}
-
-echoTodo(){
-  echo $toDo
-}
-
-trap echoCompleted SIGUSR1
-trap echoTodo SIGUSR2
-
-get_abs_filename() {
-  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-}
+if ! command -v $COMMAND &> /dev/null;
+then
+  echo "$COMMAND not found"
+  exit 1
+fi
 
 files=($dirpath/$mask)
 
-for file in ${files[*]}
-do
-  abs_path=$(get_abs_filename $file)
-  if ! [ -f "$abs_path" ]; then
-    continue
-  fi
-  if (( $toDo > $number ))
-  then
-    wait -n ${pids[*]}
-    completed=$((completed + 1))
-    toDo=$((toDo - 1))
-  fi
-    ($COMMAND $(get_abs_filename $file);) &
-    toDo=$((toDo + 1))
-    pids+=($!)
+for file in "${files[@]}"; do
+  "$command" "$file" &
+
+  running_processes=$(jobs -p)
+  while [ ${#running_processes[@]} -ge $number ]; do
+    wait -n
+    running_processes=$(jobs -p)
+  done
 done
 
-while (( $completed != ${#files[@]} ))
-do
-  wait -n ${pids[*]}
-  completed=$((completed + 1))
-  toDo=$((toDo - 1))
-done
+wait
