@@ -1,0 +1,55 @@
+#!/bin/bash
+
+guessed=0
+not_guessed=0
+total_guesses=0
+guessed_numbers=()
+attempts=0
+RED='\e[31m'
+GREEN='\e[32m'
+RESET='\e[0m'
+
+while true; do
+  secret_number=$((RANDOM % 10))
+  echo "Step $((attempts + 1))"
+  read -p "Please enter number from 0 to 9 (q - quit): " user_input
+
+  if [[ "$user_input" == "q" ]]; then
+    echo "Thanks for game!."
+    break
+  fi
+
+  if ! [[ "$user_input" =~ ^[0-9]$ ]]; then
+    echo "Error: Please enter number from 0 to 9 (q - quit)."
+    continue
+  fi
+
+  user_input=$((10#$user_input))
+  if ((user_input == secret_number)); then
+    echo "Hit! My number $secret_number"
+    ((guessed++))
+    number_string="${GREEN}${secret_number}${RESET}"
+  else
+    echo "Miss! My number $secret_number"
+    ((not_guessed++))
+    number_string="${RED}${secret_number}${RESET}"
+  fi
+  guessed_numbers+=("$number_string")
+  ((attempts++))
+
+  total_guesses=$((guessed + not_guessed))
+  echo "Hit: $((guessed * 100 / total_guesses))% Miss: $((not_guessed * 100 / total_guesses))%"
+
+  len=${#guessed_numbers[@]}
+  echo -n "Numbers: "
+  if ((len < 10)); then
+    for i in $(seq 0 9); do
+      echo -e -n "${guessed_numbers[$i]} "
+    done
+  else
+    for i in $(seq $((len - 10)) $((len - 1))); do
+      echo -e -n "${guessed_numbers[$i]} "
+    done
+  fi
+  echo ""
+done

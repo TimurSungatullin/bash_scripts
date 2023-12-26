@@ -1,0 +1,38 @@
+#!/bin/bash
+
+if [ "$#" -ne 3 ]; then
+    echo "Error: Please enter 3 arguments (directory, old suffix, new suffix)."
+    exit 1
+fi
+
+directory=$1
+old_suffix=$2
+new_suffix=$3
+
+if [ ! -d "$directory" ]; then
+  echo "$directory is not a directory."
+  exit 1
+fi
+if [ "${old_suffix:0:1}" != "." ]; then
+  echo "$old_suffix is not a suffix"
+fi
+if [ "${new_suffix:0:1}" != "." ]; then
+  echo "$new_suffix is not a suffix"
+fi
+shopt -s dotglob
+
+rename_files() {
+    for file in "$1"/*; do
+        if [ -d "$file" ]; then
+            rename_files "$file"
+        elif [ -f "$file" ]; then
+            base=$(basename "$file")
+            if [[ $base == *?"$old_suffix" ]]; then
+                new_base="${base%$old_suffix}$new_suffix"
+                mv "$file" "$1/$new_base"
+            fi
+        fi
+    done
+}
+
+rename_files "$directory"

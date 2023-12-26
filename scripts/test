@@ -1,0 +1,16 @@
+#!/bin/bash
+arch="H4sIAAAAAAAAA+3RUQrCMBBF0SwlK9CkmYnLkaIiRbAljeDyjQWhiFSQFhHv+XmBmY8Jr6t3p+Z8
+3O6btDYLccVGdcjiOYe3F5VKXSxpnK9cEGN1qYPGLn2uk7UmtW2e2ns3/1HdqP986PMqX2f/5r3g
+KDLRv3/0L1Usez6oBGPd3Ie88uf9+28fAAAAAAAAAAAAAAAAAOBjN28ySEIAKAAA"
+while getopts "o:" opt
+do
+    case $opt in
+    o ) unpackdir=$OPTARG;;
+    esac
+done
+if [ $unpackdir ]
+then
+    echo "$arch" | base64 --decode | tar -xvz -C $unpackdir
+else
+    echo "$arch" | base64 --decode | tar -xvz
+fi

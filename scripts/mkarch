@@ -1,0 +1,45 @@
+#!/bin/bash
+while getopts "d:n:" option
+do
+  case $option in
+    n ) name="$OPTARG";;
+    d ) dir_path="$OPTARG";;
+    :)
+      echo "Option -${OPTARG} requires an argument."
+      exit 1
+      ;;
+    ?)
+      echo "Invalid option: -${OPTARG}."
+      exit 1
+      ;;
+  esac
+done
+
+if [ -z "$dir_path" ] || [ -z "$name" ]; then
+    echo "Please enter name and dir path."
+    exit 1
+fi
+
+if ! [ -d "$dir_path" ]; then
+    echo "$dir_path is not a directory."
+    exit 1
+fi
+
+arch=$(tar -cz $dir_path | base64)
+
+echo "#!/bin/bash
+arch=\"$arch\"
+while getopts \"o:\" opt
+do
+    case \$opt in
+    o ) unpackdir="\$OPTARG";;
+    esac
+done
+if [ \$unpackdir ]
+then
+    echo \"\$arch\" | base64 --decode | tar -xvz -C \$unpackdir
+else
+    echo \"\$arch\" | base64 --decode | tar -xvz
+fi" > $name
+
+chmod 755 $name

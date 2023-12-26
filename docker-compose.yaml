@@ -1,0 +1,11 @@
+version: "3.4"
+
+volumes:
+  questionary_backend_local_postgres_data: {}
+
+services:
+  scripts:
+    image: python:3.9-slim
+    volumes:
+      - ./scripts:/scripts
+    command: tail -f /dev/null

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+  echo "Error: Please enter 1 argument (directory)."
+  exit 1
+fi
+
+directory=$1
+if [ ! -d "$directory" ]; then
+  echo "$directory is not a directory."
+  exit 1
+fi
+
+shopt -s dotglob
+user_name=$(whoami)
+date=$(date -I)
+
+for file in "$directory"/*.txt; do
+    if [ -f "$file" ]; then
+        echo "Approved $user_name $date" | cat - "$file" > temp && mv temp "$file"
+    fi
+done

@@ -1,0 +1,118 @@
+#!/bin/bash
+
+STEP=1
+SIZE=4
+
+init_game(){
+    M=()
+    EMPTY=
+    RANDOM=$RANDOM
+    for i in {1..15}
+    do
+        j=$(( RANDOM % 16 ))
+        while [[ ${M[j]} != "" ]]
+        do
+            j=$(( RANDOM % 16 ))
+        done
+        M[$((i - 1))]=$i
+    done
+    for i in {0..15}
+    do
+        [[ ${M[i]} == "" ]] && EMPTY=$i
+    done
+    draw_board
+}
+
+draw_board(){
+    clear
+    echo "Ход № $STEP"
+    D="-----------------"
+    N="+---------------+"
+    S="%s\n|%3s|%3s|%3s|%3s|\n"
+    for i in {0..3}
+    do
+      if (($i == 0)); then
+        echo $N
+      else echo $D
+      fi
+      echo -n "|"
+      for j in {0..3}
+      do
+        printf "%3s|" ${M[4 * i + j]:-"."}
+      done
+      echo
+    done
+    echo $N
+}
+
+exchange(){
+    M[$EMPTY]=${M[$1]}
+    M[$1]=""
+    EMPTY=$1
+    STEP=$((STEP+1))
+    check_win
+}
+
+check_step(){
+  if ! [[ $1 =~ ^[0-9]+$ ]]; then
+    echo "Ошибка: введите, пожалуйста, число или q (выход)"; return
+  fi
+  available_steps=()
+  if (($((EMPTY + 1)) % $SIZE != 0 )); then
+    available_steps[$((EMPTY + 1))]=${M[$((EMPTY + 1))]}
+  fi
+  if (($((EMPTY - 1)) >= 0)) && (($((EMPTY - 1)) % $SIZE != $((SIZE - 1)) )); then
+    available_steps[$((EMPTY - 1))]=${M[$((EMPTY - 1))]}
+  fi
+  if (($((EMPTY + SIZE)) < $((SIZE * SIZE)) )); then
+    available_steps[$((EMPTY + SIZE))]=${M[$((EMPTY + SIZE))]}
+  fi
+  if (($((EMPTY - SIZE)) >= 0 )); then
+    available_steps[$((EMPTY - SIZE))]=${M[$((EMPTY - SIZE))]}
+  fi
+  for index in ${!available_steps[*]}
+  do
+    if (("${available_steps[$index]}" == "$1")); then
+      exchange $index
+      return
+    fi
+  done
+  echo "Неверных ход!"
+  echo "Невозможно костяшку $1 передвинуть на пустую ячейку"
+  echo -n "Можно выбрать: "
+  printf '%s ' "${available_steps[@]}"
+}
+
+check_win(){
+    for i in {0..14}
+    do
+        if [ "${M[i]}" != "$(( $i + 1 ))" ]
+        then
+            return
+        fi
+    done
+    if (($STEP % 10 == 1)); then
+      echo "Вы собрали головоломку за $STEP ход."
+    elif (($STEP % 10 > 1)) && (($STEP % 10 < 5)); then
+      echo "Вы собрали головоломку за $STEP хода."
+    elif (($STEP % 10 >= 5)); then
+      echo "Вы собрали головоломку за $STEP ходов."
+    fi
+    exit
+}
+
+start_game(){
+while :
+do
+    read -p "Ваш ход (q - выход): " user_step
+    case $user_step in
+        q) exit;;
+        *) check_step $user_step;;
+
+    esac
+    draw_board
+done
+}
+
+init_game
+start_game

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+  echo "Error: Please enter 1 argument (directory)."
+  exit 1
+fi
+
+directory=$1
+if [ ! -d "$directory" ]; then
+  echo "$directory is not a directory."
+  exit 1
+fi
+
+shopt -s dotglob
+declare -A suffix_count
+
+process_files() {
+    for file in "$1"/*; do
+        if [ -d "$file" ]; then
+            process_files "$file"
+        elif [ -f "$file" ]; then
+            filename=$(basename -- "$file")
+            if [[ $filename == *?.*? ]]; then
+                suffix=${filename##*.}
+            else
+                suffix="no suffix"
+            fi
+
+            ((suffix_count[$suffix]++))
+        fi
+    done
+}
+
+process_files "$directory"
+
+for suffix in "${!suffix_count[@]}"; do
+  echo "$suffix: ${suffix_count[$suffix]}"
+done | sort -rnk2
